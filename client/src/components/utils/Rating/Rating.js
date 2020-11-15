@@ -11,7 +11,7 @@ const Rating = ({ props }) => {
   }
   const style_star = {
     clipPath:
-      props.numReviews === 0 ? `inset(0 100% 0 0)` : `inset(0 ${rate}% 0 0)`,
+      props.rating === 0 ? `inset(0 100% 0 0)` : `inset(0 ${rate}% 0 0)`,
   };
   return (
     <div className="rating">

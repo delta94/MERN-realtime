@@ -28,11 +28,29 @@ const DetailProduct = () => {
     setLoading(true);
     getData(`/api/comments/${id}`)
       .then((res) => {
-        setComments(res.data.comments);
+        setComments((r) => (r = res.data.comments));
         setLoading(false);
       })
       .catch((err) => console.log(err.response.data.msg));
   }, [id]);
+
+  // Realtime
+  // Join Room
+
+  useEffect(() => {
+    if (socket) {
+      socket.emit('joinRoom', id);
+    }
+  }, [socket]);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('sendCommentToClient', (msg) => {
+        setComments([msg, ...comments]);
+      });
+      return () => socket.off('sendCommentToClient');
+    }
+  }, [socket, comments]);
 
   return (
     <div className="detail_product_page">
@@ -91,7 +109,7 @@ const DetailProduct = () => {
 
         <div className="comments_list">
           {comments.map((comment) => (
-            <CommentItem key={comment._id} comment={comment} />
+            <CommentItem key={comment._id} comment={comment} socket={socket} />
           ))}
         </div>
       </div>

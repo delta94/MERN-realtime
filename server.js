@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const Comments = require('./models/commentModel');
+const { use } = require('./routes/productRouter');
 
 const app = express();
 app.use(express.json());
@@ -13,11 +14,32 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
 // Socket.io
+const users = [];
 io.on('connection', (socket) => {
   console.log(socket.id + 'connected');
 
+  socket.on('joinRoom', (id) => {
+    const user = { userId: socket.id, room: id };
+
+    const check = users.every((user) => user.userId !== socket.id);
+
+    if (check) {
+      users.push(user);
+      socket.join(user.room);
+    } else {
+      users.map((user) => {
+        if (user.userId === socket.id) {
+          if (user.room !== id) {
+            socket.leave(user.room);
+            socket.join(id);
+            user.room = id;
+          }
+        }
+      });
+    }
+  });
+
   socket.on('createComment', async (msg) => {
-    console.log(msg);
     const { username, content, product_id, createdAt, rating } = msg;
 
     const newComment = new Comments({
@@ -29,7 +51,7 @@ io.on('connection', (socket) => {
     });
 
     await newComment.save();
-    console.log(newComment);
+    io.to(newComment.product_id).emit('sendCommentToClient', newComment);
   });
 
   socket.on('disconnect', () => {
